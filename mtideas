@@ -1,0 +1,37 @@
+multithreading ideas?
+
+TSTART cpu, sp, ip
+TSTARTW cpu, sp, ip
+TSTARTO cpu, sp, ip
+CPUHALT
+TJOIN cpu
+TSTOP cpu
+TMAIL cpu, reg
+TMAILBOX reg, reg(err)
+TMAILBOXW reg, reg(err)
+TQUERY cpu
+TPROCN reg
+MOFF
+
+TJOIN waits until cpu hits CPUHALT
+then picks back up on calling thread
+
+TSTOP stops a processor
+
+CPUHALT halts thread and notifies TJOINs
+
+MOFF powers off mobo
+
+other ideas:
+OUT port, leaf, reg
+IN port, leaf, reg
+
+OUTB port, leaf, reg
+INB port, leaf, reg
+
+LEAF 0: 
+	MANUFACTURER 
+LEAF 1:
+	DEVICE NAME
+
+

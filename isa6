@@ -1,0 +1,100 @@
+encoding iteration 7:
+
+Structure (headered):
+[Header][Opcode][Params]
+
+Structure (non-headered):
+[Opcode][0 or 1 Param]
+
+HEADER 1:
+bit 0-3 = instruction size
+bit 4   = M-Mod ext
+bit 5   = opcode arg
+bit 6   = opcode size switch
+bit 7   = header switch
+
+if bit 6 on then opcode size = 2
+
+2^7  = 128 - 1 byte opcode - no header
+2^9  = 512 - 1 byte opcode - headered
+2^16 = 65535 - 2 byte opcode - headered
+
+Non-headered:
+bit 0-5 = opcode
+bit 6 = bank switch
+bit 7 = header switch 
+
+Non-headered banks:
+BANK 1 -> no args -> 64 entries
+BANK 2 -> 1 single-byte arg -> 64 entries
+
+size w/ MSB, MSB-1:
+00 = 1 byte insn
+01 = 2 byte insn
+
+Constraints (no header):
+opcode either takes 0 args
+or it takes one arg, the arg
+can only be one byte, so only
+1 RM byte or one imm8.
+
+immediatesize = instruction_sz - consumable
+
+Design constraints:
+One mnemonic = one opcode
+Variable length
+One immediate
+Immediate at the end
+
+Explaining Displacements VS immediates:
+Immediates can be 1-8 bytes.
+Displacements are 2 bytes, signed.
+
+R = Reg
+M = Mem
+I = Imm 
+
+load.rm
+store.mr
+store.mi
+move.rr
+move.ri
+
+R-Byte:
+bit 0-5: regcode
+bit 6-7: Size 
+
+Size:
+00 = 8 bits
+01 = 16 bits
+10 = 32 bits
+11 = 64 bits
+
+M-Byte:
+bit 0-5: regcode
+bit 6-7: Mod
+
+Mod:
+000 = [reg] (1b)
+001 = [reg + reg * scale] (2b)
+010 = [reg + disp8] (2b)
+011 = [reg + disp16] (3b)
+100 = [reg + reg * scale + disp8] (3b)
+101 = [reg + reg * scale + disp16] (4b)
+110 = [RESERVED]
+111 = [RESERVED]
+
+M2-Byte:
+bit 0-5: regcode
+bit 6-7: scale
+
+Scale:
+00 = 1x
+01 = 2x
+10 = 4x
+11 = 8x
+
+Idea:
+The reserved 2 byte opcode bit can be used for
+another mod extension, going from 8 possible forms
+of addressing to 16 possible.

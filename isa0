@@ -1,0 +1,25 @@
+encoding iteration 1:
+
+overview:
+[Operands][Opcode]
+
+Operands:
+[continuation bit][operand enum number]
+
+Opcode:
+[continuation bit][opcode enum number]
+
+Continuation bit:
+if zero: now youre at the end
+
+Assume REG64_REG64 operations are 0b00000110
+Assume the ADD insn is 0b01100110
+Assume R0 is 0b00000000
+Assume R15 is 0b00001111
+
+ADD R0, R15 
+THEREFORE EQUALS:
+
+[00000110] + [01100110] + [00000000] + [00001111]
+
+0x06 0x66 0x00 0x0F

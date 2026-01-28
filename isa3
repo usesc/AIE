@@ -1,0 +1,102 @@
+encoding iteration 4:
+
+Overview:
+[Header][Opcode][Params]
+Overview 2:
+[Opcode][Param]
+
+HEADER (idea):
+bit 0-3 = instruction size
+bit 4   = opcode extension bit
+bit 5   = IFZ
+bit 6   = 1 or 2 byte opcode
+bit 7   = header or no header
+
+instruction size:
+0000 = 2
+0001 = 3
+ETC ETC
+
+Opcode/no header:
+bit 0-5 = opcode
+bit 6 = bank (1 = 1 arg, 0 = 0 args)
+bit 7 = header or no header
+
+Constraints (no header):
+opcode either takes 0 args
+or it takes one arg, the arg
+can only be one byte, so only
+immediate 8's, or IMM8, no 
+IMM64's. 
+
+No header bit 6 (bank):
+when not flipped (no args):
+NOP
+RET
+when flipped (1 arg)
+CLR_R r0 (register)
+PLH_I 255 (imm8)
+
+opcode size enum:
+00 = 1 byte
+01 = 2 bytes
+10 = 3 bytes
+11 = 4 bytes
+
+RM byte:
+RM Size - 2 bits:
+Scalar:
+00 = 8
+01 = 16
+10 = 32
+11 = 64
+Vector:
+00 = 128
+01 = 256
+10 = 512
+11 = 1028
+RM Reg code:
+6 bits. 2^6 regs
+
+NOTE:
+If IMM is always the end arg, 
+and instruction size and opcode
+size are encoded in the header,
+you can get the immediate simply
+consuming the header, opcode, and
+the preceding RM bytes before the
+immediate, because you know how 
+many preceding RM bytes there are
+from the instruction itself.
+
+Immediate = Total - Consumed
+
+Assume ADD_RR operations are 0000 0001
+Assume R00_64 is 1100 0000
+Assume R15_64 is 1100 1111
+
+IFZ ADD_RR R0_64, R15_64
+THEREFORE EQUALS:
+
+[1010 0011] + [0000 0001] + [1100 0000] + [1100 1111]
+
+0xA4 0x01 0xC0 0xCF
+
+R = Register
+M = Memory
+I = Immediate
+
+Design constraints:
+One mnemonic = one opcode (no exceptions)
+Variable length
+maybe Ones complement
+One immediate
+Immediate at the end
+Max instruction size of 17 bytes
+
+Opcode spaces:
+No header (128 in total):
+	64 no param 
+	64 with one byte param
+With header and 1 byte opcode:
+

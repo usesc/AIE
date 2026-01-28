@@ -1,0 +1,74 @@
+encoding iteration 5:
+
+Structure (headered):
+[Header][Opcode][Params]
+
+Structure (non-headered):
+[Opcode][0 or 1 Param]
+
+HEADER 1:
+bit 0-2 = Immediate size / opcode ext
+bit 3-4 = Num regs
+bit 5   = immediate switch
+bit 6   = opcode size switch
+bit 7   = header switch
+
+OPCODE 2:
+bit 0-14 = opcode
+bit 15   = num regs ext
+
+2^6  = 64       (0 arg)         1 byte insn
+2^6  = 64       (1 arg)         1 byte insn
+2^8  = 256      (3 regs + imm)  1 byte opcode
+2^11 = 2048     (3 regs)        1 byte opcode
+2^15 = 32,768   (8 regs + imm)  2 byte opcode
+2^18 = 262,144  (8 regs)        2 byte opcode
+
+instruction size:
+0000 = 2
+0001 = 3
+ETC ETC
+
+Non-headered:
+bit 0-5 = opcode
+bit 6 = bank switch
+bit 7 = header switch 
+
+Non-headered banks:
+BANK 1 -> no args -> 64 entries
+BANK 2 -> 1 single byte arg -> 64 entries
+
+Constraints (no header):
+opcode either takes 0 args
+or it takes one arg, the arg
+can only be one byte, so only
+1 register arg or one imm8.
+
+RM byte:
+RM Size - 2 bits:
+Scalar:
+00 = 8
+01 = 16
+10 = 32
+11 = 64
+Vector:
+00 = 128
+01 = 256
+10 = 512
+11 = 1028
+RM Reg code:
+6 bits. 2^6 regs
+
+Instruction size = Header + Opcode + Regs + Immsize
+
+R = Register
+M = Memory
+I = Immediate
+
+Design constraints:
+One mnemonic = one opcode (no exceptions)
+Variable length
+maybe Ones complement
+One immediate
+Immediate at the end
+

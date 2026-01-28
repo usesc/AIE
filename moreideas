@@ -1,0 +1,54 @@
+Currently this is how immediates work:
+
+conventional =
+0xFF imm64 
+0x0000 0000 0000 00FF
+
+Opcode = 0x1F
+
+1Fh FFh 00h 00h 00h 00h 00h 00h 00h 
+
+so we cut the trailing zeroes because
+they encode no information. This is now
+optimal. 
+
+1Fh FFh 
+
+But what of this? 
+0xFF00 0000 0000 0000
+
+now both the conventional and my way aligns:
+1Fh 00h 00h 00h 00h 00h 00h 00h FFh 
+1Fh 00h 00h 00h 00h 00h 00h 00h FFh 
+
+now what I call is zooming in optimization,
+or maybe sliding window optimization? anyway
+we need somewhere to store the index on where what I 
+call the window starts. 
+
+In 0xFFEE DDCC
+CC = idx 0
+DD = idx 1
+EE = idx 2
+FF = idx 3
+
+remember this? 0xFF00 0000 0000 0000
+this has a lot of repeating information.
+The "useful data" starts at index 7. 
+
+so 3 bits for index. 
+
+Also we need to know what bit to fill the 
+inner indexes with, and which to fill 
+the outer indexes with. 
+
+so 2 bits there, for both directions, 1 equals
+all ones, and 0 equals all zeros. But you could
+use more bits for more patterns. 
+
+All of this leads to a dedicated immediate descriptor
+byte. Which is the problem, I couldnt originally find
+a way to easily convey to the decoder where when and 
+if this descriptor would exist without adding more opcodes. 
+So it's "in the works"? 
+

@@ -1,0 +1,63 @@
+encoding iteration 3:
+
+Overview:
+[Opcode][Params]
+
+Opcode:
+[opcode size][opcode enum number]
+
+bits 0-5 = opcode enum
+bits 6-7 = opcode size
+
+opcode enum:
+00 = 1 byte
+01 = 2 bytes
+10 = 3 bytes
+11 = 4 bytes
+
+opcode enum bits:
+00 = (1*8)-2 bits (6 bits)
+01 = (2*8)-2 bits (14 bits)
+10 = (3*8)-2 bits (22 bits)
+11 = (4*8)-2 bits (30 bits)
+
+RM byte:
+RM Size (2 bits):
+Scalar:
+00 = 8
+01 = 16
+10 = 32
+11 = 64
+Vector:
+00 = 128
+01 = 256
+10 = 512
+11 = 1028
+RM Reg code:
+6 bits
+0->63
+
+NOTE: 
+USE LEB128 for encoding immediates,
+it removes I64 I8 I16 and replces it
+with a single IMM encoding
+
+Assume ADD_RR operations are 0000 0110
+Assume R00_64 is 1100 0000
+Assume R15_64 is 1100 1111
+
+ADD_RR R0, R15
+THEREFORE EQUALS:
+
+[0000 0110] + [1100 0000] + [1100 1111]
+
+0x06 0xC0 0xCF
+
+R = Register
+M = Memory
+I = Immediate
+
+Design constraints:
+One mnemonic = one opcode (no exceptions)
+Variable length
+maybe Ones complement

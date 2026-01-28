@@ -1,0 +1,139 @@
+encoding iteration 9:
+
+Structure (headered):
+[Header][Opcode][Params]
+
+Structure (non-headered):
+[Opcode][0 or 1 Param]
+
+HEADER 1:
+bit 0-3 = instruction size
+bit 4   = immediate sign
+bit 5   = header 2 activation
+bit 6   = opcode size switch
+bit 7   = header switch
+
+HEADER 2:
+bit 0-7 = RESERVED
+
+bit 4 = 0, implicit 0 immediate
+bit 4 = 1, implicit -1 immediate
+
+if bit 6 on then opcode size = 2
+
+2^7  = 128 opcodes
+2^8  = 256 opcodes
+2^16 = 65536 opcodes
+
+Non-headered:
+bit 0-5 = opcode
+bit 6 = bank switch
+bit 7 = header switch 
+
+Non-headered banks:
+BANK 1 -> no args -> 64 entries
+BANK 2 -> 1 single-byte arg -> 64 entries
+
+size w/ MSB, MSB-1:
+00 = 1 byte insn
+01 = 2 byte insn
+
+Constraints (no header):
+opcode either takes 0 args
+or it takes one arg, the arg
+can only be one byte, so only
+1 RM byte or one imm8.
+
+immediatesize = instruction_sz - consumable
+
+Design constraints:
+Variable length
+One immediate
+Immediate at the end
+
+R = Reg
+M = Mem
+I = Imm 
+
+load.rm
+store.mr
+store.mi
+move.rr
+move.ri
+
+R-Byte:
+bit 0-4: regcode
+bit 5: bank
+bit 6-7: Register size
+
+Y-byte:
+its just an imm8
+
+Size:
+00 = 8 bits
+01 = 16 bits
+10 = 32 bits
+11 = 64 bits
+
+M-Byte:
+bit 0-4: regcode
+bit 5-7: Mod
+
+Mod:
+000 = [reg] (1b)
+001 = [reg + disp8] (2b)
+010 = [reg + disp16] (3b)
+011 = [reg + disp32] (4b)
+100 = [reg + reg * scale] (2b)
+101 = [reg + reg * scale + disp8] (3b)
+110 = [reg + reg * scale + disp16] (4b)
+111 = [reg + reg * scale + disp32] (6b)
+
+N-Byte:
+bit 0-4: regcode
+bit 5: bank
+bit 6-7: scale
+
+Scale:
+000 = 1x
+001 = 2x
+010 = 4x
+011 = 8x
+
+volatile = function registers
+non-volatile = main registers
+
+r0  = return | arg 0 | volatile 
+r1  = return | arg 1 | volatile 
+r2  = return | arg 2 | volatile 
+r3  = arg 3 | volatile 
+r4  = arg 4 | volatile 
+r5  = arg 5 | volatile 
+r6  = arg 6 | volatile 
+r7  = arg 7 | volatile 
+r8  = volatile 
+r9  = volatile 
+r10 = volatile 
+r11 = volatile 
+r12 = volatile 
+r13 = volatile 
+r14 = volatile 
+r15 = non-volatile
+r16 = non-volatile
+r17 = non-volatile
+r18 = non-volatile
+r19 = non-volatile
+r20 = non-volatile
+r21 = non-volatile
+r22 = non-volatile
+r23 = non-volatile
+r24 = non-volatile
+r25 = non-volatile
+r26 = non-volatile
+r27 = non-volatile
+r28 = non-volatile
+r29 = non-volatile
+r30 = SP
+r31 = IP 
+
+32*8 = 256 bytes

@@ -1,0 +1,56 @@
+encoding iteration 2:
+
+Overview:
+[Opcode]
+
+Opcode:
+[opcode size][opcode enum number]
+
+bits 0-5 = opcode enum
+bits 6-7 = opcode size
+
+opcode enum:
+00 = 1 byte
+01 = 2 bytes
+10 = 3 bytes
+11 = 4 bytes
+
+NOTE: 
+USE LEB128 for encoding immediates,
+it removes I64 I8 I16 and replaces it
+with a single IMM encoding
+
+00 = (1*8)-2 bits (6 bits)
+01 = (2*8)-2 bits (14 bits)
+10 = (3*8)-2 bits (22 bits)
+11 = (4*8)-2 bits (30 bits)
+
+Assume ADD_R64_R64 operations are 0000 0110
+Assume R0 is 0000 0000
+Assume R15 is 0000 1111
+
+ADD_R64_R64 R0, R15
+THEREFORE EQUALS:
+
+[0000 0110] + [0000 0000] + [0000 1111]
+
+0x06 0x00 0x0F
+
+ADD_R64_R64_S R0, R15
+Equals:
+
+[0000 0111] + [0000 1111]
+
+0x07 0x0F
+
+R
+M
+I
+
+Register
+Memory
+Immediate
+
+R64 M64 I64
+
+Ones complement

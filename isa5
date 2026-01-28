@@ -1,0 +1,118 @@
+encoding iteration 6:
+
+Structure (headered):
+[Header][Opcode][Params]
+
+Structure (non-headered):
+[Opcode][0 or 1 Param]
+
+HEADER 1:
+bit 0-3 = instruction size
+bit 4-5 = RM size 
+bit 6   = opcode size switch
+bit 7   = header switch
+
+if bit 6 on then opcode size = 2
+
+OPCODE - 2 BYTES:
+bit 0-14 = opcode
+bit 15   = num regs ext
+
+2^7  =   128 - 1 byte opcode - no header
+2^8  =   256 - 1 byte opcode - headered
+2^15 = 32768 - 2 byte opcode - headered
+
+instruction size:
+0000 = 2
+0001 = 3
+ETC ETC
+
+Non-headered:
+bit 0-5 = opcode
+bit 6 = bank switch
+bit 7 = header switch 
+
+Non-headered banks:
+BANK 1 -> no args -> 64 entries
+BANK 2 -> 1 single-byte arg -> 64 entries
+
+size w/ MSB, MSB-1:
+00 = 1 byte insn
+01 = 2 byte insn
+
+Constraints (no header):
+opcode either takes 0 args
+or it takes one arg, the arg
+can only be one byte, so only
+1 RM byte or one imm8.
+
+RM byte:
+RM Size - 2 bits:
+Scalar:
+00 = 8
+01 = 16
+10 = 32
+11 = 64
+Vector:
+00 = 128
+01 = 256
+10 = 512
+11 = 1028
+RM Reg code:
+6 bits. 2^6 regs
+
+immediatesize = instruction_sz - (header + opcode(s) + rm_byte(s))
+
+Design constraints:
+One mnemonic = one opcode (no exceptions)
+Variable length
+maybe Ones complement
+One immediate
+Immediate at the end
+
+Explaining Displacements VS immediates:
+Immediates can be 1-8 bytes.
+Displacements are 1-3? bytes, signed.
+
+; displacement in multiplication
+; is evaluated as unsigned
+
+R = Reg
+M = Mem: Reg + Disp
+W = Mem: Reg + Reg + Disp
+I = Imm 
+
+; MOV ONLY:
+X = Mem: Reg + Reg * Disp
+
+// reg dest 
+MOV.RR - mov reg, reg
+MOV.RI - mov reg, imm
+MOV.RM - mov reg, [reg+disp]
+MOV.RJ - mov reg, [reg+reg+disp]
+MOV.RX - mov reg, [reg+reg*disp]
+
+// mem dest
+MOV.MR - mov [reg+disp], reg
+MOV.MI - mov [reg+disp], imm
+MOV.WR - mov [reg+reg+disp], reg
+MOV.WI - mov [reg+reg+disp], imm
+MOV.XR - mov [reg+reg*disp], reg
+MOV.XI - mov [reg+reg*disp], imm
+
+
+
+hdr + opc + rm + disp + imm
+
+R-Byte:
+bit 0-5: regcode
+bit 6-7: size 
+
+M-Byte:
+bit 0-5: regcode
+bit 6-7: Mod
+
+00 = [reg]
+01 = [reg+disp]
+10 = [reg+reg+disp]
+11 = [reg+reg*disp]

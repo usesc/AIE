@@ -1,0 +1,289 @@
+encoding iteration 10:
+
+Structure (headered):
+[Header][Opcode][Params]
+
+Structure (non-headered):
+[Opcode][0 or 1 Param]
+
+HEADER 1:
+bit 0-3 = payload size
+bit 4   = immediate sign
+bit 5   = mod extension
+bit 6   = opcode 2 switch
+bit 7   = header switch
+
+immediate sign, 1 = negative
+
+instruction_size =
+payload_size + 2 + bit_6
+
+implicits only go into effect
+when the immediate does not
+exist in the instruction.
+bit 4 = 0, implicit 0 immediate
+bit 4 = 1, implicit -1 immediate
+
+if bit 6 on then opcode size = 2
+
+immediate really equals magnitude
+and immediate sign is the sign.
+This makes negative numbers weighed
+equally with non-negative numbers
+because sign extension uses a lot
+of high bits.
+
+3 Opcode Spaces
+2^7  = 128 opcodes
+2^8  = 256 opcodes
+2^16 = 65536 opcodes
+total: 
+2^7 + 2^8 + 2^16
+
+Non-headered:
+bit 0-5 = opcode
+bit 6 = bank switch
+bit 7 = header switch
+
+Non-headered banks:
+BANK 1 -> no args (0b) -> 64 entries
+BANK 2 -> one arg (1b) -> 64 entries
+
+direct instruction size =
+1 + bit6
+
+size w/ MSB, MSB-1:
+00 = 1 byte insn
+01 = 2 byte insn
+
+Constraints (no header):
+opcode either takes 0 args
+or it takes one arg, the arg
+can only be one byte, so only
+1 RM byte or one imm8.
+
+immediate size equals instruction
+size minus everything before the
+immediate.
+
+Design constraints:
+Variable length
+One immediate
+One memory operand
+Immediate at the end
+
+R = Reg
+M = Mem
+I = Imm
+N = Mem2 + scale
+K = immediate 8 bit
+
+for reg/mem? 0 = register
+1 = memory
+
+R-Byte:
+bit 0-4: regcode
+bit 5-6: Register sized
+bit 7: reg/mem?
+
+K-byte:
+its just an imm8
+
+M-Byte:
+bit 0-4: regcode
+bit 5-6: Mod
+bit 7: reg/mem?
+
+N-Byte:
+bit 0-4: regcode
+bit 5-6: scale
+bit 7: reserved
+
+Mod:
+000 = [reg] (1b)
+001 = [reg + disp8] (2b)
+010 = [reg + disp16] (3b)
+011 = [reg + disp32] (5b)
+	from here onward requires N byte
+100 = [reg + reg * scale] (2b)
+101 = [reg + reg * scale + disp8] (3b)
+110 = [reg + reg * scale + disp16] (4b)
+111 = [reg + reg * scale + disp32] (6b)
+
+Size:
+00 = 8 bits
+01 = 16 bits
+10 = 32 bits
+11 = 64 bits
+
+Scale:
+000 = 1x
+001 = 2x
+010 = 4x
+011 = 8x
+
+volatile = function registers
+non-volatile = caller's registers
+
+possible ABI? 
+r0  = return | arg 0 | volatile
+r1  = return | arg 1 | volatile
+r2  = return | arg 2 | volatile
+r3  = arg 3 | volatile
+r4  = arg 4 | volatile
+r5  = arg 5 | volatile
+r6  = arg 6 | volatile
+r7  = arg 7 | volatile
+r8  = volatile
+r9  = volatile
+r10 = volatile
+r11 = volatile
+r12 = volatile
+r13 = volatile
+r14 = volatile
+r15 = non-volatile
+r16 = non-volatile
+r17 = non-volatile
+r18 = non-volatile
+r19 = non-volatile
+r20 = non-volatile
+r21 = non-volatile
+r22 = non-volatile
+r23 = non-volatile
+r24 = non-volatile
+r25 = non-volatile
+r26 = non-volatile
+r27 = non-volatile
+r28 = non-volatile
+r29 = non-volatile
+r30 = SP
+r31 = IP
+
+inferencing strategy:
+0 = R / S / 8b
+1 = R / S / 1b
+2 = R / S / 2b
+3 = R / S / 4b
+4 = R / S / 4b
+5 = R / S / 8b
+6 = R / S / 8b
+7 = R / S / 8b
+8 = R / S / 8b
+
+R = register
+S = scale
+b = bytes
+
+32*8 = 256 bytes
+
+Examples of instructions:
+
+XOR r0, -1
+91h 1Fh 60h
+
+XOR [r1 + r2 * 8 + 0xDEADBEEF], 0x1234
+A9h 1Fh E1h 62h EFh BEh ADh DEh 34h 12h
+
+PUSH r1
+49h 61h
+
+RET
+03h
+
+deeper explanations: 
+
+immediate is variable sized, so 1-8 including 
+non-power-of-twos and odd numbers. Immediates 
+must have a defined endpoint, in normal arch's
+it's by making the immediate fixed size EG: imm64.
+In this arch, the end guarantee exists, all 
+immediates must be at the end of the instruction.
+This method uses the instruction's boundary as 
+the immediates boundary. It relies on the payload
+size in the header to end the immediate. 
+
+The "r/m?" bit just tells the decoder whether the 
+argument is a memory or a register. 0 for register,
+1 for memory. This method allows us to reduce the 
+number of opcodes. 
+For example: 
+	MOV reg, mem 
+	MOV mem, reg 
+With this bit we get to do this instead:
+	MOV r/m, r/m
+I borrowed the idea from x86. 
+
+
+The inferencing strategy table looks confusing
+at first, but heres why it exists. For Imm->Mem operations
+(memory destination, immediate source) we dont actually know
+what size to interpret the immediate at first. This is because
+I swapped the R-byte's size field for a mod field in the M-byte. 
+So worst case scenario, I have to insert a meaningless Register
+byte in the instruction just to use it's size field. The strategy
+guesses what size the immediate would be, so that in the average
+case, I don't not have to emit extra bytes. Scale is used as an
+inference as well. 
+
+
+Immediates and negatives.
+Negative numbers take a sickening amount of sign extension
+in two's complement. Normally this is okay when the encoding
+has fixed length immediates. With a variable length immediate 
+system, this principle is especially malicious. -1 (all ones) 
+would take 8 bytes, instead of 1 byte. In this system, immediates
+are the descriptors for the distance from zero the number is. 
+-1 and 1 are both a distance of 1 from 0, in real life. In my 
+encoding, -1 being 8 bytes would be especially wasteful, so I 
+put a sign bit in the header, and immediates serve as distance. 
+This evens everything out, -1 is 1 byte, and 1 is 1 byte. Also
+this same bit is what allows me to have the two implicit numbers,
+implicit 0 (all zeroes) and implicit -1 (all ones). This gives 
+these two common values a footprint of 0 bytes. 
+
+Non-headered:
+For the small instructions, they shouldn't have to have a header,
+so the non-headered space exists for 1-2 byte instructions. This 
+shaves about a byte or two? Really not too many savings but I'll
+take it, especially considering that 1 byte in a 3 byte instruction
+is 33.3%, so thats a 33.3% reduction in that instruction. 
+
+Biggest spends:
+There are 32 registers, which is kind of a pain because that 
+means every register needs its own byte. In x86, three bits
+are allocated to a single register in the MOD/RM byte,
+so two registers can be in a single byte. Lucky. Though, for 
+memory operands, x86 and this is about the same size, but x86 
+can encode like another register for free or something I forgot. 
+Also, x86 is a cheap bastard and they like to encode the register
+destination straight into the opcode, I cant do that, I have 32 
+registers, If I did this for 8 instructions, the entire 256 opcode 
+space would be occupied. Aha though, my encoding doesn't allow any 
+prefixes at all, so we save there. Also the header takes a whole 
+byte, that's not good. In all, register heavy code, mine's a bit
+longer, in immediate heavy code, mine's shorter. 
+
+(context: 32 registers takes 5 bits, 8 registers takes 3 bits)
+
+Explaining mod extension. 
+Its just an extra bit to mod. Mod requires 3 bits, 
+if you would notice in the M-byte, there are only 2 bits for 
+Mod, the third bit is in the header. 
+
+
+
+
+
+
+
+Note:
+The point of this ISA isnt even really for use. 
+It's to plant creativity when we need it most, now. 
+I know im not the best, thats why this thing is MIT. 
+You have one CISC (x86) thats complex and hard to decode 
+but powerful. and you have dozens of RISC thats easy to 
+decode but laughably weak and has bigger binaries. 
+Nobody has compromised. 
+
+Also get this: one encoding should not last more than two
+decades. And backwards compatibility is a scam. 
